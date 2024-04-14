@@ -1,0 +1,76 @@
+{% load static %}
+<header>
+    <style>
+        #intro {
+            /* Margin to fix overlapping fixed navbar */
+            margin-top: 58px;
+        }
+        
+        @media (max-width: 991px) {
+            #intro {
+                /* Margin to fix overlapping fixed navbar */
+                margin-top: 45px;
+            }
+        }
+        #uni_modal .modal-sub-footer{
+            display:none;
+        }
+    </style>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-gradient fixed-top shadow border-bottom">
+        <div class="container">
+            <!-- Navbar brand -->
+            <a class="navbar-brand"  href="{% url 'core:user-list' %}">
+            {% if page_title %}
+                <b>{{page_name}}</b>
+            {% else %}
+                <b>{{system_name}}</b>
+            {% endif %}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarExample01" aria-controls="navbarExample01" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarExample01">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="topNav">
+                    {% if request.user.staffuser %}
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="{% url 'core:user-list' %}">Users</a>
+                    </li> 
+                    {% endif %}
+                    {% comment %} <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="{% url 'recycle-bin' %}">Recycle Bin</a>
+                    </li>  {% endcomment %}
+                </ul>
+
+                <ul class="navbar-nav d-flex flex-row">
+                    {% if request.user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link"  href="{% url 'admin:index' %}"><b>Howdy, {{user.username}}</b><a>
+                    </li>
+                    {% endif %}
+                    {% if request.user.is_active %}
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="{% url 'core:logout' %}">Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="{% url 'core:login-page' %}">Login</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <
+</header>
+<script>
+    $(function() {
+        $('#topNav .nav-link').each(function() {
+            var current = '{{ request.get_full_path | urlencode }}'
+            if (current == $(this).attr('href')) {
+                $(this).parent().addClass('active')
+            }
+        })
+    })
+</script>

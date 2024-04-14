@@ -1,0 +1,474 @@
+
+{% load static %}
+<style>
+
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .container-fluid {
+        margin-top: 30px;
+    }
+
+    form {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        font-weight: bold;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        box-sizing: border-box;
+        margin-bottom: 10px; /* Improved spacing between input elements */
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        color: #ffffff;
+    }
+
+    .list-group-item {
+        background-color: #ffffff;
+        margin-top: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 15px; /* Improved padding for better readability */
+    }
+
+    .list-group-item h5 {
+        margin-bottom: 0;
+    }
+
+    .list-group-item .btn-danger {
+        margin-top: 10px;
+    }
+
+    .collapse.multi-collapse {
+        margin-top: 10px;
+    }
+
+    .btn-primary,
+    .btn-danger {
+        margin-right: 10px;
+    }
+
+    .text-danger {
+        color: #dc3545;
+        margin-top: 5px; /* Improved spacing for better readability */
+    }
+</style>
+<body>
+<div class="container-fluid">
+<form id="transactionForm">
+{% csrf_token %}
+          <div class="form-group row">
+          <input type="hidden" name='user_id' value="{{user_id}}"></input>
+          <input type="hidden" id="id" name='id' value=""></input>
+        <div class="col-md-6">
+            <label for="date">Date:</label>
+            <input type="date" name='date' value = "" class="form-control" value="{{transaction.form.created_at}}" id="date" required>
+        </div>
+        <div class="col-md-6">
+        <label for="party" class="control-label">Party:</label>
+        <input type="text" id="name" value="" name="name" list="partyList" class="form-control" required>
+        <datalist id="partyList">
+            {% for party in parties %}
+            <option value="{{party.name}}">
+            {% endfor %}
+        </datalist>
+    </div>
+</div>
+<div class="form-group">
+    <label for="description">Description:</label>
+    <textarea class="form-control" name="description" id="description" rows="2" ></textarea>
+</div>
+
+<div class="form-group row">
+    <div class="col-md-6">
+        <label for="debit">Debit Amount:</label>
+        <input type="number" name="debit" class="form-control" id="debit" value="" min="0" step="0.01" default="0" >
+    </div>
+    <div class="col-md-6">
+        <label for="credit">Credit Amount:</label>
+        <input type="number" name="credit" class="form-control" id="credit" min="0" step="0.01" value = "" default="0" >
+    </div>
+</div>
+
+
+<button type="submit" class="btn btn-secondary" id="addTransaction">Add to List</button>
+</form>
+    <div id="transactionList">
+        <table class="display cell-border " style="width:100%" id="transaction-tbl">
+            <thead>
+                <tr>
+                    <th >#</th>
+                    <th >Date</th>
+                    <th >Name</th>
+                    <th >Description</th>
+                    <th >Debit</th>
+                    <th >Credit</th>
+                    <th >Action</th>
+                </tr>
+            </thead>
+            
+        </table>
+    </div>
+</div>
+</body>
+<script>
+    $(document).ready(function () {
+       
+        
+        $('#myModal').off('shown.bs.modal').on('shown.bs.modal', function () {
+            $('#date').val(localStorage.getItem('date'));
+            dataTable = initializeDataTable();
+        });
+        
+        $('#date').on('change', function () {
+            localStorage.setItem('date', $(this).val());
+            initializeDataTable()
+        })
+
+
+        $('#debit').on('input', function () {
+            var debitValue = $(this).val();
+            $('#credit').prop('disabled', debitValue > 0);
+            clearError('#debit');
+        });
+
+        $('#credit').on('input', function () {
+            var creditValue = $(this).val();
+            $('#debit').prop('disabled', creditValue > 0);
+            clearError('#credit');
+        });
+        
+        // Add transaction to the list
+        $('#transactionForm').submit(function (e) {
+            var id = $('#id').val();
+            console.log(id)
+            var name = $('#name').val();
+            var description = $('#description').val();
+            var debit = $('#debit').val();
+            var credit = $('#credit').val();
+            
+            e.preventDefault()
+            
+            var _this = $(this)
+            $('.err-msg').remove();
+            var el = $('<div>')
+            el.addClass("alert alert-danger err-msg")
+            el.hide()
+            if (_this[0].checkValidity() == false) {
+                _this[0].reportValidity();
+                return false;
+            }
+            
+            start_loader();
+            $.ajax({
+                headers: {
+                    "X-CSRFToken": '{{csrf_token}}'
+                },
+                url: "{% url 'accounts:save-transaction' %}",
+                data: new FormData($(this)[0]),
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST',
+                dataType: 'json',
+                error: err => {
+                    console.log(err)
+                    alert("An error occured", 'error');
+                    end_loader();
+                },
+                success: function(resp) {
+                    if (typeof resp === 'object' && resp.status === 'success') {
+                        $('#date').val(localStorage.getItem('date'));
+                        initializeDataTable()
+                        end_loader();
+                    } else {
+                        el.text("An error occurred", 'error');
+                        _this.prepend(el)
+                        el.show('slow')
+                        $("html, body, .modal").scrollTop(0);
+                        end_loader();
+                    }
+                }
+            })
+             $('#date, #name, #description, #debit, #credit').prop('disabled', false);
+
+            
+            if (name.trim() !== "") {
+                // Check if either debit or credit has a value greater than 0
+                if ((debit.trim() !== "" && parseFloat(debit) > 0) || (credit.trim() !== "" && parseFloat(credit) > 0)) {
+                    // Clear errors and remove border from "Credit" and "Debit" fields
+                    clearError('#debit');
+                    clearError('#credit');
+                    $('#debit, #credit').removeClass('border border-danger');
+
+                    // Append data to the list
+                
+                    // Clear form fields
+                    $('#transactionForm')[0].reset();
+                    $('#name').focus();
+                } else {
+                    // Group "Credit" and "Debit" fields together in an outline
+                    $('#debit, #credit').addClass('border border-danger');
+
+                    // Display error message
+                    $('#debit, #credit').after('<div class="text-danger">Please enter an amount in either Debit or Credit field.</div>');
+                }
+            } else {
+                // Find the first empty field and move the cursor to it
+                var emptyField = $('#transactionForm input, #transactionForm textarea').filter(function () {
+                    return $(this).val().trim() === "";
+                }).first();
+
+                // Move cursor to the empty field
+                emptyField.focus();
+
+                // Give notice beneath the empty field
+                emptyField.after('<div class="text-danger">Please fill this field.</div>');
+            }
+        });
+
+        window.clearError = function (element) {
+            if (Array.isArray(element)) {
+                element.forEach(function (item) {
+                    item.removeClass('border border-danger');
+                    item.siblings('.text-danger').remove();
+                });
+            } else {
+                element.removeClass('border border-danger');
+                element.siblings('.text-danger').remove();
+            }
+        };
+
+        // Function to show an error for a given element
+        window.showError = function (element, message) {
+            element.addClass('border border-danger');
+            element.after('<div class="text-danger">' + message + '</div>');
+        };
+
+    
+
+        // Function to clear error messages
+        function clearError(element) {
+            $(element).next('.text-danger').remove();
+        }
+        
+        function initializeDataTable() {
+             var selectedDate = localStorage.getItem('date')
+            if(selectedDate==''){
+            selectedDate = '2000-01-01'
+            }
+            // AJAX request to fetch transactions based on the selected date
+            $.ajax({
+                url: '{% url "accounts:transaction_list" %}',
+                type: 'GET',
+                data: {'date': selectedDate,
+                        'user_id':{{user_id}}},
+                dataType: 'json',
+                success: function (data) {
+                    // Clear existing transaction list
+                    $('#transactionList').empty();
+
+                    // Populate the transaction list with the fetched data
+                    var transactionHtml = '<table class="display cell-border" style="width:100%" id="transaction-tbl">';
+                    transactionHtml += '<thead><tr><th>#</th><th>Date</th><th>Name</th><th>Description</th><th>Debit</th><th>Credit</th><th>Action</th></tr></thead>';
+                    transactionHtml += '<tbody>';
+                    
+                    $.each(data.transactions, function (index, transaction) {
+                        transactionHtml += '<tr id="tbl-row">';
+                        transactionHtml += '<td>' + (index+1) + '</td>';
+                        transactionHtml += '<td>'  +transaction.date+ '</td>';
+                        transactionHtml += '<td>'  +transaction.party+ '</td>';
+                        transactionHtml += '<td>' + transaction.description + '</td>';
+                        transactionHtml += '<td>' + transaction.debit + '</td>';
+                        transactionHtml += '<td>' + transaction.credit + '</td>';
+                        transactionHtml += '<td>' +
+                                    '<div class="btn-group" role="group" aria-label="Edit and Delete buttons">' +
+                                    '<button class="btn btn-light btn-sm rounded-0 border edit-data-transaction" data-url="/manage_transaction/' + transaction.id + '" type="button">' +
+                                    '<i class="fa fa-pencil text-secondary"></i>' +
+                                    '</button>' +
+                                    '<button class="btn btn-light btn-sm rounded-0 border delete-data-transaction" data-url="/delete_transaction/' + transaction.id + '" type="button">' +
+                                    '<i class="fa fa-trash text-danger"></i>' +
+                                    '</button>' +
+                                    '</div>' +
+                                    '</td>';
+                        transactionHtml += '</tr>';
+                    });
+
+                    $('#tbl-row').after(transactionHtml);
+                    transactionHtml += '</tbody>';
+                    transactionHtml += '</table>';
+                    $('#transactionList').append(transactionHtml);
+                    // Append the entire HTML content after the loop
+                    var dataTable = $('#transaction-tbl').DataTable({
+                        responsive: {
+                            details: {
+                                type: 'column',
+                                target: 'tr'
+                            }
+                        },
+                        rowGroup: {
+                            dataSrc: 1
+                        },
+                        columnDefs: [
+                            {
+                                orderable: false,
+                                targets: [1,2,3,4,5]
+                            },
+                            { "width": "150px", "targets": 2 }, // Set width for the first column
+                            { "width": "70px", "targets": 4 }, // Set width for the second column
+                            { "width": "50px", "targets": 6 },   // Set width for the third column
+                            { "width": "70px", "targets": 5 },
+                            { responsivePriority: 1, targets: 1 },
+                            { responsivePriority: 2, targets: -1 },
+                        ],
+                        order: [
+                            [1, 'desc'], // Sorting by target 1 in descending order
+                            [0, 'desc']   // Then sorting by target 0 in ascending order
+                        ],
+                        paging:true
+                    })
+                    var hideColumnIndex = 0;
+                    var column = dataTable.column(hideColumnIndex);
+                    column.visible(false);
+                    var hide2ColumnIndex = 1;
+                    var column2 = dataTable.column(hide2ColumnIndex);
+                    column2.visible(false);
+                    $('#transactionList').off('click', '.edit-data-transaction').on('click', '.edit-data-transaction', function() {
+                        $.ajax({
+                            url: $(this).attr('data-url'),
+                            method: 'GET',
+                            data: {
+                                'user_id': {{user_id}},
+                            },
+                            error: err =>{
+                                    alert("An error occured")
+                                },
+                            success: function(resp){
+                                if(resp){
+                                    $('#name').val(resp.transaction.party);
+                                    $('#description').val(resp.transaction.description);
+                                    $('#debit').val(resp.transaction.debit);
+                                    $('#credit').val(resp.transaction.credit);
+                                    $('#id').val(resp.transaction.id);
+                                    $('#date').val(resp.transaction.date)
+                                    initializeDataTable()
+                                    end_loader()
+                                }
+                            }
+                        });
+                    });
+                    $('#transactionList').on('click', '.delete-data-transaction',function() {
+                        $('#myModal').modal('hide');
+                         _conf("Are you sure to delete this Transaction?", 'delete_transaction', ["'" + $(this).attr('data-url') + "'"])
+                    })
+                    
+                },
+                error: function (error) {
+                    console.error('Error fetching transactions:', error);
+                }
+            });
+        }
+
+        $.fn.dataTable.ext.search.push(
+            function (settings, data, dataIndex) {
+                var date = $('#date').val() ? new Date($('#date').val()) : null;
+                var transactionDate = new Date(data[1]); // assuming the date is in the 5th column
+
+                if ( date == null || transactionDate.setHours(0, 0, 0, 0) == date.setHours(0,0,0,0) ) {
+                    return true;
+                }
+
+                return false;
+            }
+        );
+        
+        // Set the cursor on the name field when modal is opened
+        
+    });
+    function delete_transaction(url) {
+        var date = $('#date').val()
+            var _this = $('#confirm_modal .modal-body')
+            $('.err-msg').remove();
+            var el = $('<div>')
+            el.addClass("alert alert-danger err-msg")
+            el.hide()
+            start_loader()
+            $.ajax({
+                headers: {
+                    "X-CSRFToken": "{{csrf_token}}"
+                },
+                url: url,
+                dataType: 'JSON',
+                error: err => {
+                    console.log(err)
+                    alert("an error occurred.")
+                    end_loader()
+                },
+                success: function(resp) {
+                    if (resp.status == 'success') {
+                        location.reload()
+                    } else if (!!resp.msg) {
+                        el.html(resp.msg)
+                        _this.prepend(el)
+                        el.show()
+                    } else {
+                        $('#confirm_modal').modal('hide');
+                        $.ajax({
+                            url: "{% url 'accounts:manage-transaction'  %}",
+                            method: 'GET',
+                            data: {
+                                'user_id': {{user_id}},
+                            },
+                            error: err =>{
+                                    alert("An error occured")
+                                },
+                            success: function(resp){
+                                if(resp){
+                                    
+                                    $('#myModal .modal-body').html(resp)
+                                    
+                                    $('myModal').modal({
+                                        backdrop:'static',
+                                        keyboard:false,
+                                        focus:true
+                                    })
+                                    $("#myModal").modal('show')
+                                    end_loader()
+                                }
+                            }
+                        });
+                        el.html("An error occurred")
+                        _this.prepend(el)
+                        el.show()
+                    }
+                    end_loader()
+                }
+
+            })
+        }
+
+</script>

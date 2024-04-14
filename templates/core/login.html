@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block pageContent %}
+<style>
+    body {
+        background-image: url('{% static "assets/default/img/wallpaper.jpg" %}');
+        background-repeat: no-repeat;
+        background-size: cover;
+        margin: 0;
+        padding: 0;
+        font-family: 'Arial', sans-serif;
+    }
+
+    main {
+        height: 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+    }
+
+
+    #logo-img {
+        height: 7em;
+        width: 7em;
+        object-fit: cover;
+        object-position: center center;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        animation: pulse 2s infinite; /* Add a subtle pulse animation */
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    #page-title {
+        font-size: 3em;
+        color: #f7f7f7;
+        font-family: 'Cursive', sans-serif;
+        text-shadow: 2px 2px 12px #b7652a;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 400px;
+        margin: 20px auto;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        transition: transform 0.3s ease; /* Add a smooth transition on hover */
+    }
+
+    .card:hover {
+        transform: scale(1.05);
+    }
+
+    .card-header {
+        background-color: #878787;
+        color: #fff;
+        text-align: center;
+        padding: 15px;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+    }
+
+    .card-title {
+        margin-bottom: 0;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #878787;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-primary {
+        border-radius: 8px;
+        background-color: #878787;
+        border: 1px solid #878787;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #615c5c;
+        border-color: #615c5c;
+    }
+
+    .not-registered {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .signup-link {
+        color: #007bff;
+        cursor: pointer;
+        text-decoration: underline;
+        transition: color 0.3s ease;
+    }
+
+    .signup-link:hover {
+        color: #0056b3;
+    }
+</style>
+
+<div class="d-flex flex-column w-100 justify-content-center align-items-center">
+    <div class="text-center">
+        <img src="{% static 'assets/default/img/logo.jpg' %}" alt="Logo" class="bg-gradient bg-dark bg-opacity-75 rounded-circle padding-0 border" id="logo-img">
+    </div>
+    <div class="col-lg-6 col-md-8 col-sm-12 col-xs-12 py-5 mb-3">
+        <h2 class="text-center fw-bolder" id="page-title">{{system_name}}</h2>
+    </div>
+    <div class="col-lg-8 col-md-10 col-sm-12 col-xs-12 pt-3">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title"><b>Login</b></h4>
+            </div>
+            <div class="card-body">
+                <form id="login-user" action="" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="username" class="control-label">Username</label>
+                        <input type="text" class="form-control" autofocus name="username" id="username" required="required">
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="control-label">Password</label>
+                        <input type="password" class="form-control" autofocus name="password" id="password" required="required">
+                    </div>
+                    <div class="form-group">
+                        <div class="d-flex justify-content-center">
+                            <button class="btn btn-primary">
+                                Login
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock pageContent %}
+
+
+{% block ScriptBlock %}
+<script>
+     $(function () {
+        $('#login-user').submit(function (e) {
+            e.preventDefault();
+            var _this = $(this)
+            $('.err-msg').remove();
+            var el = $('<div>')
+            el.addClass("alert alert-danger err-msg")
+            el.hide()
+            if (_this[0].checkValidity() == false) {
+                _this[0].reportValidity();
+                return false;
+            }
+            start_loader();
+            $.ajax({
+                headers: {
+                    "X-CSRFToken": '{{csrf_token}}'
+                },
+                url: "{% url 'core:login-user' %}",
+                data: new FormData($(this)[0]),
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST',
+                dataType: 'json',
+                error: err => {
+                    console.log(err)
+                    alert("An error occurred", 'error');
+                    end_loader();
+                },
+                success: function (resp) {
+                    if (typeof resp == 'object' && resp.status == 'success') {
+                        el.removeClass("alert alert-danger err-msg")
+                        location.href = "{% url 'core:user-list' %}"
+                    } else if (resp.status == 'failed' && !!resp.msg) {
+                        el.text(resp.msg)
+                    } else {
+                        el.text("An error occurred", 'error');
+                        end_loader();
+                        console.error(resp)
+                    }
+                    _this.prepend(el)
+                    el.show('slow')
+                    $("html, body, .modal").scrollTop(0);
+                    end_loader()
+                }
+            })
+        })
+    }) 
+</script>
+{% endblock ScriptBlock %}

@@ -1,0 +1,258 @@
+{% load static %} 
+{% load customfilter %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {% if page_title %}
+    <title>{{page_title}} | {{system_name}}</title>
+    {% else %}
+    <title>{{system_name}}</title>
+    {% endif %}
+    <link rel="shortcut icon" href="{% static 'assets/default/img/logo.jpg' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <link rel="stylesheet" href="{% static 'assets/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/default/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/select2/dist/css/select2.min.css' %}">
+    {% comment %} css regarding datatables {% endcomment %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.1/css/buttons.dataTables.min.css">
+    {% comment %} scripts regarding data tables {% endcomment %}
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.datatables.net/2.0.0/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.0/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.0/js/buttons.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.0/js/buttons.print.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.0/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.0/js/responsive.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/rowgroup/1.5.0/js/dataTables.rowGroup.js"></script>
+    <script src="https://cdn.datatables.net/rowgroup/1.5.0/js/rowGroup.dataTables.js"></script>
+    {% comment %}  {% endcomment %}
+    <script src="https://cdn.datatables.net/rowgroup/1.4.1/js/dataTables.rowGroup.min.js" ></script>
+    <script src="{% static 'assets/bootstrap/js/popper.min.js' %}"></script>
+    <script src="{% static 'assets/select2/dist/js/select2.min.js' %}"></script>
+    <script src="{% static 'assets/bootstrap/js/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'assets/default/js/script.js' %}"></script>
+    <script type="text/javascript" src="{% static 'assets/default/js/vfs_fonts.js' %}"></script>
+    <style>
+        
+        .modal-sub-footer {
+            display: flex;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0.75rem;
+            border-top: 1px solid #dee2e6;
+            border-bottom-right-radius: calc(0.3rem - 1px);
+            border-bottom-left-radius: calc(0.3rem - 1px);
+        }
+        @media (max-width: 576px) {
+            .modal-dialog {
+                max-width: calc(100% - 1rem);
+            }
+        }
+
+        @media (min-width: 577px) and (max-width: 768px) {
+            .modal-dialog {
+                max-width: calc(100% - 3rem);
+            }
+        }
+
+/* Add more media queries for other screen sizes as needed */
+
+       
+        body{
+            background-image:url("{% static 'assets/default/img/bg1.jpg' %}");
+            background-size:cover;
+            background-repeat:no-repeat;
+            background-position:center center;
+        }
+        #userlist_checkbox[type="checkbox"]{
+            pointer-events: none;
+        }
+    </style>
+    {% block headerContent %} {% endblock headerContent %}
+</head>
+<body class="">
+    {% if topbar %} {% block TopNavigation %} {% include "topNavigation.html" %} {% endblock TopNavigation %} {% endif %}
+    <main class="py-5 mt-4">
+        <div class="container mb-3">
+            {% if messages %}
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    {% for message in messages %}
+                    <div class="alert alert-{% if message.extra_tags %}{{ message.tags|replaceBlank:message.extra_tags|replaceBlank:' '}}{% else %}{{ message.tags }}{% endif %} w-100 rounded-0 mb-2 redirect-msg">
+                        <div class="d-flex w-100">
+                            <div class="col-auto flex-shrink-1 flex-grow-1">{{ message|safe }}</div>
+                            <div class="col-auto text-center">
+                                <button class="btn-close btn-sm text-sm" type="button" onclick="$(this).closest('.alert').remove()"></button>
+                            </div>
+                        </div>                        
+                    </div>
+                    {% if message.extra_tags != 'stay' %}
+                    <script>
+                        $(function(){
+                            if($('.redirect-msg').length >0){
+                                setTimeout(()=>{
+                                    $('.redirect-msg').hide('slideUp')
+                                    setTimeout(()=>{
+                                        $('.redirect-msg').remove()
+                                    },3000)
+                                },5000)
+                            }
+                        })
+                    </script>
+                    {% endif %}{% endfor %}
+            </div>
+        </div>{% endif %}{% block pageContent %} {% endblock pageContent %}
+    </main>
+    {% block ScriptBlock %} {% endblock ScriptBlock %}
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" c aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Transaction Form</h5>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+             <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div class="modal fade" id="uni_modal" tabindex="-1" role='dialog' aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+            <div class="modal-content rounded-0">
+                <div class="modal-header">
+                    <h5 class="modal-title"></h5>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn  btn-sm btn-flat btn-primary rounded-0" id='submit' onclick="$('#uni_modal form').submit()">Save</button>
+                    <button type="button" class="btn btn-sm btn-flat btn-light border rounded-0" data-bs-dismiss="modal">Cancel</button>
+                </div>
+                <div class="modal-sub-footer">
+                    <button type="button" class="btn btn-sm btn-flat btn-light border rounded-0" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+        <div class="modal fade" id="confirm_modal" aria-hidden="true" tabindex="-1" role='dialog' aria-labelledby="confirmModalLabel">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg" role="document">
+                <div class="modal-content rounded-0">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmModalLabel">Confirmation</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div id="delete_content"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-flat btn-primary rounded-0" id='confirm' onclick="">Continue</button>
+                        <button type="button" class="btn btn-sm btn-flat btn-light border rounded-0" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="viewer_modal" role='dialog'>
+            <div class="modal-dialog modal-fullscreen" role="document">
+                <div class="modal-content rounded-0 bg-transparent">
+                    <div class="modal-body bg-transparent d-flex flex-column w-100 h-100 align-items-center justify-content-center">
+                        <div class="text-end w-100 px-5">
+                            <a class="text-decoration-none text-light" href="javascript:void(0)" data-bs-dismiss="modal"><i class="fa fa-times fs-3"></i></a>
+                        </div>
+                        <div id="img-viewer" class="w-75 h-75 bg-dark overflow-auto">
+                            <img src="" class="image-thumbnail" id="img-viewer-field" />
+                        </div>
+                        <div class="w-25 d-flex justify-content-center pt-3">
+                            <div class="input-group mb-3">
+                                <button class="btn btn-dark bg-gradient btn-sm text-light" type="button" id="zoom-minus"><i class="fa fa-minus"></i></button>
+                                <input type="text" id="zoom-value" class="form-control form-control-sm rounded-0 w-25 bg-dark bg-gradient border-dark text-light text-center" value="100" placeholder="" aria-label="Example text with button addon" aria-describedby="button-addon1" readonly>
+                                <button class="btn btn-dark bg-gradient btn-sm text-light" type="button" id="zoom-plus"><i class="fa fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const loader = $('<div>')
+        loader.attr('id','pre-loader')
+        loader.html('<div class="lds-facebook"><div></div><div></div><div></div><div></div>')
+        window.start_loader = function(){
+            $('body').removeClass('loading')
+            if ($('#pre-loader').length > 0)
+                $('pre-loader').remove();
+            $('body').append(loader)
+            $('body').addClass('loading')
+        }
+        window.end_loader = function(){
+            if($('#pre-loader').length > 0)
+                $('#pre-loader').remove();
+            $('body').removeClass('loading')
+        }
+        window.form_modal = function($url = ''){
+            start_loader()
+            $.ajax({
+                url:$url,
+                error: err =>{
+                    alert("An error occured")
+                },
+                success: function(resp){
+                    if(resp){
+                        $('#myModal .modal-body').html(resp)
+                        $('#myModal').modal({
+                            backdrop:'static',
+                            keyboard:false,
+                            focus:true
+                        })
+                        $("#myModal").modal('show')
+                        end_loader()
+                    }
+                }
+            })
+        }
+        window.uni_modal = function($title = '', $url = '',$size = ''){
+            start_loader()
+            $.ajax({
+                url:$url,
+                error: err =>{
+                    alert("An error occured")
+                },
+                success: function(resp){
+                    if(resp){
+                        $('#uni_modal .modal-title').html($title)
+                        $('#uni_modal .modal-body').html(resp)
+                        
+                        $('#uni_modal').modal({
+                            backdrop:'static',
+                            keyboard:false,
+                            focus:true
+                        })
+                        $("#uni_modal").modal('show')
+                        end_loader()
+                    }
+                }
+            })
+        }
+        window._conf = function($msg = '', $func = '', $params = []) {
+            $('#confirm_modal #confirm').attr('onclick', $func + "(" + $params.join(',') + ")")
+            $('#confirm_modal .modal-body').html($msg)
+            $('#confirm_modal').modal('show')
+        }
+    </script>
+</body>
+</html>

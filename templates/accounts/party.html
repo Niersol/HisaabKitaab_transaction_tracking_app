@@ -1,0 +1,298 @@
+{% extends 'base.html' %} {% load static %} {% block pageContent %} {% load customfilter %}
+<style>
+    .al-logo {
+        height: 3em;
+        width: 3em;
+        object-fit: scale-down;
+        object-position: center center;
+    }
+</style>
+<section class="py-4">
+    <div class="container"> 
+        <h3 class="fw-bolder text-center">List of Parties</h3>
+        <center>
+            <hr class="bg-primary opacity-100" style="height:3px" width="5%">
+             {% if perms.accounts.can_manage_transactions or user.assigned_staff.user == request.user %}
+            <button type="button" class="btn btn-primary" id="new_form" >
+                Manage Transactions
+            </button>
+            {% endif %}
+        </center>
+        <div class="card rounded-0 shadow">
+            <div class="card-body">
+                <div class="container-fluid">
+                {% if perms.accounts.add_party or user.assigned_staff.user == request.user  %}
+                    <div class="text-end mb-3">
+                        <button class="btn btn-sm btn-primary rounded-0 bg-gradient-primary" type="button" id="create_new"><i class="fa fa-plus"></i> Add New Party</button>
+                    </div>
+                {% endif %}
+                    <table class="display cell-border" class="table table-bordered table-striped" style="width:100%" id="party-tbl">
+                        <thead>
+                            <tr>
+                                <th >#</th>
+                                <th >Name</th>
+                                <th >Address</th>
+                                <th >Phone_number</th>
+                                <th >Balance</th>
+                                <th >Action</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for party in parties %}
+                            <tr>
+ 
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ party.name}}</td>
+                                <td>{{ party.address | check_value}}</td>
+                                <td>
+                                    <p class="m-0 truncate-1">{{ party.phone_number | check_value }}</p>
+                                </td>
+                                <td>
+                                    {% with balance=party.get_balance %}
+                                        {% if balance > 0 %}
+                                            <p class="m-0 truncate-1 text-success">{{ balance }}(+)</p>
+                                        {% elif balance < 0 %}
+                                            <p class="m-0 truncate-1 text-danger">{{ balance | abs }}(-)</p>
+                                        {% else %}
+                                            <p class="m-0 truncate-1">{{ balance }}</p>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+
+                                <td>
+                                
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm rounded-0 border dropdown-toggle" type="button" id="abtn{{cat.pk}}" data-bs-toggle="dropdown" aria-expanded="false">
+                                          Action
+                                        </button>
+                                        <ul class="dropdown-menu" aria-labelledby="abtn{{party.pk}}">
+                                            {% if perms.accounts.view_party or party.user.assigned_staff.user == request.user %}
+                                            <li>
+                                            <a class="dropdown-item view-data-trans" href="{% url 'accounts:view-transactions' party.pk %}"><i class="fa fa-eye text-dark"></i>View Transactions</a>
+                                            </li>
+                                            {% endif %}
+                                            {% if perms.accounts.change_party or party.user.assigned_staff.user == request.user %}
+                                            <li><a class="dropdown-item edit-data" href="javascript:void(0)" data-url="{% url 'accounts:manage-party-pk' party.pk %}"><i class="fa fa-edit text-primary"></i> Edit</a></li>
+                                            {% endif %}
+                                            {% if perms.accounts.delete_party or party.user.assigned_staff.user == request.user %}
+                                            <li><a class="dropdown-item delete-data" href="javascript:void(0)" data-url="{% url 'accounts:delete-party' party.pk %}"><i class="fa fa-trash text-danger"></i> Delete</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                
+                                </td>
+                 
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table> 
+                </div>
+            </div>
+        </div>
+    </div> 
+</section>
+{% endblock pageContent %} {% block ScriptBlock %}
+<script>
+    
+    $(function() {
+         $('#new_form').click(function(){
+            $.ajax({
+                url: "{% url 'accounts:manage-transaction'  %}",
+                method: 'GET',
+                data: {
+                    'user_id': {{user.id}},
+                },
+                error: err =>{
+                        alert("An error occured")
+                    },
+                success: function(resp){
+                    if(resp){
+                        
+                        $('#myModal .modal-body').html(resp)
+                        
+                        $('#uni_modal').modal({
+                            backdrop:'static',
+                            keyboard:false,
+                            focus:true
+                        })
+                        $("#myModal").modal('show')
+                        end_loader()
+                    }
+                }
+            });
+        })
+        $('#create_new').click(function() {
+            $.ajax({
+            url: "{% url 'accounts:manage-party'  %}",
+            method: 'GET',
+            data: {
+                'user_id': {{user.id}},
+            },
+            error: err =>{
+                    alert("An error occured")
+                },
+            success: function(resp){
+                if(resp){
+                    $('#uni_modal .modal-title').html("Add New Party")
+                    $('#uni_modal .modal-body').html(resp)
+                    
+                    $('#uni_modal').modal({
+                        backdrop:'static',
+                        keyboard:false,
+                        focus:true
+                    })
+                    $("#uni_modal").modal('show')
+                    end_loader()
+                }
+            }
+});
+             
+        })
+            // Attach click event to the view-data link
+
+
+        $('.edit-data').click(function() {
+            uni_modal("<i class='fa fa-edit'></i> Edit Party Details", $(this).attr('data-url'))
+        })
+        $('.view_image').click(function() {
+            var img = $(this).attr('data-img-url')
+            $('#viewer_modal #img-viewer-field').attr('src', img)
+            $('#viewer_modal').modal('show')
+        })
+        $('.delete-data').click(function() {
+            _conf("Are you sure to delete this party?", 'delete_party', ["'" + $(this).attr('data-url') + "'"])
+        })
+        $('#party-tbl').find('td, th').addClass('px-2 py-1 align-middle')
+        var dataTable = $('#party-tbl').DataTable({
+            layout: {
+                    topStart: {
+                        buttons: [
+                        {
+                            extend: 'print',
+                            title: '',
+                            autoPrint: true,
+                            customize: function (win) {
+                                $(win.document.body).find('th:last-child').text('Received');
+                                $(win.document.body).find('td:last-child').empty();
+                            }
+                        },
+                        {
+                                extend: 'pdfHtml5',
+                                title:"",
+                                exportOptions: {
+                                    columns: [ 0, 1, 2, 3,4 ],
+                             
+
+                                },
+                                customize: function (doc) {
+                                    doc.styles['table'] = {alignment:'center'};
+                                    doc.content[0].table.widths = [ '5%',  '25%', '25%', '18%','15%','12%'];
+                                    processDoc(doc);
+                                   addExtraColumn(doc);
+                                    doc.content[0].layout = 'lightHorizontalLines'  
+                                }
+                            }
+                        ]  
+                }
+            }, 
+            responsive: {
+                details: {
+                    type: 'column',
+                    target: 'tr'
+                }
+            },
+            columnDefs: [
+                {
+                    orderable: false,
+                    targets: [1,2,3,4,5]
+                },
+                { "width": "120px", "targets": 3 }, // Set width for the first column
+                { "width": "90px", "targets": 4 },   // Set width for the third column
+                { "width": "40px", "targets": 5 },
+                { responsivePriority: 1, targets: 1 },
+                { responsivePriority: 2, targets: -1 },
+                { responsivePriority: 3, targets: 4 },
+            ],
+            order: [[0, 'asc']],
+            lengthMenu: [
+                [25, 50, 100, -1],
+                [25, 50, 100, "All"]
+            ],
+        })
+        var hideColumnIndex = 0;
+        var column = dataTable.column(hideColumnIndex);
+        column.visible(false);
+
+})
+
+    function delete_party(url) {
+
+        var _this = $('#confirm_modal .modal-body')
+        $('.err-msg').remove();
+        var el = $('<div>')
+        el.addClass("alert alert-danger err-msg")
+        el.hide()
+        start_loader()
+        $.ajax({
+            headers: {
+                "X-CSRFToken": "{{csrf_token}}"
+            },
+            url: url,
+            dataType: 'JSON',
+            error: err => {
+                console.log(err)
+                alert("an error occurred.")
+                end_loader()
+            },
+            success: function(resp) {
+                if (resp.status == 'success') {
+                    location.reload()
+                } else if (!!resp.msg) {
+                    el.html(resp.msg)
+                    _this.prepend(el)
+                    el.show()
+                } else {
+                    el.html("An error occurred")
+                    _this.prepend(el)
+                    el.show()
+                }
+                end_loader()
+            }
+
+        })
+    }
+    function processDoc(doc) {
+    pdfMake.fonts = {
+      Roboto: {
+        normal: 'Roboto-Regular.ttf',
+        bold: 'Roboto-Medium.ttf',
+        italics: 'Roboto-Italic.ttf',
+        bolditalics: 'Roboto-MediumItalic.ttf'
+      },
+      arial: {
+        normal: 'arial.ttf',
+        bold: 'arial.ttf',
+        italics: 'arial.ttf',
+        bolditalics: 'arial.ttf'
+      },
+      noto:{
+        normal: 'noto.ttf',
+        bold: 'noto.ttf',
+        italics: 'noto.ttf',
+        bolditalics: 'noto.ttf'
+      }
+    };
+    // modify the PDF to use a different default font:
+    doc.defaultStyle.font = "noto";
+    var i = 1;
+    }
+    function addExtraColumn(pdf) {
+    pdf.content[0].table.body.forEach(function(row, idx) { 
+      let newCell = structuredClone(row[0]);
+      newCell.text = idx === 0 ? "Received" : "";
+      row.push( newCell );
+    })
+  };
+</script>
+{% endblock ScriptBlock %}

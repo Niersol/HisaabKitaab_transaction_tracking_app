@@ -1,0 +1,75 @@
+{% load static %}
+<body>
+<div class="container-fluid">
+    <form action="" id="party-form">
+    {% if party.user.id %}
+        <input type="hidden" name="user" value="{{party.user.id}}">
+    {% else %}
+        <input type="hidden" name="user" value="{{user_id}}">
+    {% endif %}
+        <input type="hidden" name="id" value="{{party.id}}">
+        <div class="mb-3">
+            <label for="name" class="control-label">Name</label>
+            <input type="text" id="name" name="name" class="form-control form-control-sm rounded-0" value="{{party.name}}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="phone_number" class="control-label">Phone Number</label>
+            <input type="text" class="form-control rounded-0" name="phone_number" id="phone_number" value="{% if form.data.phone_number %}{{ form.data.phone_number }}{% else %}{{ party.phone_number }}{% endif %}" >
+        </div>
+        <div class="mb-3">
+            <label for="address" class="control-label">Address</label>
+            <textarea rows="3" id="address" name="address" class="form-control form-control-sm rounded-0" >{{party.address}}</textarea>        </div>
+        
+    </form>
+</div>
+</body>
+<script>
+    $(function() {
+        $('#party-form').submit(function(e) {
+            e.preventDefault();
+            var _this = $(this)
+            $('.err-msg').remove();
+            var el = $('<div>')
+            el.addClass("alert alert-danger err-msg")
+            el.hide()
+            if (_this[0].checkValidity() == false) {
+                _this[0].reportValidity();
+                return false;
+            }
+            start_loader();
+            $.ajax({
+                headers: {
+                    "X-CSRFToken": '{{csrf_token}}'
+                },
+                url: "{% url 'accounts:save-party' %}",
+                data: new FormData($(this)[0]),
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST',
+                dataType: 'json',
+                error: err => {
+                    console.log(err)
+                    alert("An error occured", 'error');
+                    end_loader();
+                },
+                success: function(resp) {
+                    if (typeof resp == 'object' && resp.status == 'success') {
+                        location.reload()
+                    } else if (resp.status == 'failed' && !!resp.msg) {
+                        el.text(resp.msg)
+                    } else {
+                        el.text("An error occured", 'error');
+                        end_loader();
+                        console.log(resp)
+                    }
+                    _this.prepend(el)
+                    el.show('slow')
+                    $("html, body, .modal").scrollTop(0);
+                    end_loader()
+                }
+            })
+        })
+    })
+</script>

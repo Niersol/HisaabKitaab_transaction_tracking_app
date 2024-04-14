@@ -1,0 +1,164 @@
+{% load static %}
+<div class="container-fluid">
+    <form action="" id="user-form">
+        <input type="hidden" name="id" value="{{user.id}}">
+        <input type="hidden" name="manage_user" value="1">
+        <div class="form-group mb-3">
+            <label for="first_name" class="control-label">First Name</label>
+            <input type="text" class="form-control rounded-0" name="first_name" id="first_name" value="{% if form.data.first_name %}{{ form.data.first_name }}{% else %}{{ user.first_name }}{% endif %}" >
+        </div>
+        <div class="form-group mb-3">
+            <label for="last_name" class="control-label">Last Name</label>
+            <input type="text" class="form-control rounded-0" name="last_name" id="last_name" value="{% if form.data.last_name %}{{ form.data.last_name }}{% else %}{{ user.last_name }}{% endif %}" >
+        </div>
+        <div class="form-group mb-3">
+            <label for="username" class="control-label">Username</label>
+            <input type="text" class="form-control rounded-0" name="username" id="username" value="{% if form.data.username %}{{ form.data.username }}{% else %}{{ user.username }}{% endif %}" required="required">
+        </div>
+        <div class="form-group mb-3">
+            <label for="phone_number" class="control-label">Phone Number</label>
+            <input type="text" class="form-control rounded-0" name="phone_number" id="phone_number" value="{% if form.data.phone_number %}{{ form.data.phone_number }}{% else %}{{ user.phone_number }}{% endif %}" required="required">
+        </div>
+        {% if request.user.is_superuser %}
+        <label for="party" class="control-label">Staff</label>
+        <input type="text" id="staff" name="staff" value="{{user.assigned_staff}}" list="userList" class="form-control" >
+        <datalist id="userList">
+            {% for user in staff_users %}
+            <option value="{{user}}">
+            {% endfor %}
+        </datalist>
+        {% endif %}
+        <div class="form-group mb-3">
+            <label for="email" class="control-label">Email</label>
+            <input type="email" class="form-control rounded-0" name="email" id="email" value="{% if form.data.email %}{{ form.data.email }}{% else %}{{ user.email }}{% endif %}" >
+        </div>
+        <div class="form-group mb-3">
+            <label for="question" class="control-label">Question</label>
+            <input type="text" class="form-control rounded-0" name="question" id="question" value="{% if form.data.question %}{{ form.data.question }}{% else %}{{ user.question }}{% endif %}" >
+        </div>
+        <div class="form-group mb-3">
+            <label for="answer" class="control-label">Answer</label>
+            <input type="text" class="form-control rounded-0" name="answer" id="answer" value="{% if form.data.answer %}{{ form.data.answer }}{% else %}{{ user.answer }}{% endif %}" >
+        </div>
+        {% if request.user.is_superuser %}
+        <label for="is_staff" class="control-label">Is_Staff</label>
+        <input type="checkbox" id="is_staff" {% if is_staff %}checked="checked"{% endif %} name="is_staff"   >
+        {% endif %}
+        {% if not user.id %}
+        <div class="form-group mb-3">
+            <label for="password1" class="control-label">Enter Password</label>
+            <input type="password" class="form-control rounded-0" name="password1" id="password1" required="required">
+        </div>
+        <div class="form-group mb-3">
+            <label for="password2" class="control-label">Confirm Password</label>
+            <input type="password" class="form-control rounded-0" name="password2" id="password2" required="required">
+        </div>
+        {% endif %}
+    </form>
+</div>
+<script>
+    $(document).ready(function() {
+       function toggleStaffInputField() {
+        if ($('#is_staff').is(':checked')) {
+            $('#staff').prop('disabled', true);
+        } else {
+            $('#staff').prop('disabled', false);
+            
+        }
+    }
+    
+
+    // Call the function when the document is ready
+    toggleStaffInputField();
+
+    // Call the function when the checkbox state changes
+    $('#is_staff').change(function() {
+        toggleStaffInputField();
+        
+    });
+        $('#staff').on('focus', function() {
+            $(this).select();
+            $(this).val('');
+            
+        });
+        $('#user-form').submit(function(e) {
+            
+            e.preventDefault();
+            var _this = $(this)
+            $('.err-msg').remove();
+            var el = $('<div>')
+            el.addClass("alert alert-danger err-msg")
+            el.hide()
+            if (_this[0].checkValidity() == false) {
+                _this[0].reportValidity();
+                return false;
+            }
+            if ($('#staff').length){
+                var staffInput = $('#staff').val().trim();
+            if(staffInput == $('#username').val()){
+                el.text("This User is not a Staff User anymore.");
+                _this.prepend(el)
+                el.show('slow')
+                $("html, body, .modal").scrollTop(0);
+                end_loader()
+                return false; // Prevent form submission
+            }
+            if (staffInput !== '' && staffInput !== "None" ) {
+                var staffFound = false;
+                $('#userList option').each(function() {
+                    if ($(this).val() === staffInput) {
+                        staffFound = true;
+                        return false; // Exit the loop
+                    }
+                });
+
+                if (!staffFound) {
+                    el.text("Staff user with this name does not exist.").appendTo(_this).show('slow');
+                    _this.prepend(el)
+                    el.show('slow')
+                    $("html, body, .modal").scrollTop(0);
+                    end_loader()
+                    return false; // Prevent form submission
+
+                }
+            }
+            }
+            
+            
+            
+            start_loader();
+            $.ajax({
+                headers: {
+                    "X-CSRFToken": '{{csrf_token}}'
+                },
+                url: "{% url 'core:save-user' %}",
+                data: new FormData($(this)[0]),
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST',
+                dataType: 'json',
+                error: err => {
+                    console.log(err)
+                    alert("An error occured", 'error');
+                    end_loader();
+                },
+                success: function(resp) {
+                    if (typeof resp == 'object' && resp.status == 'success') {
+                        location.reload()
+                    } else if (resp.status == 'failed' && !!resp.msg) {
+                        el.text(resp.msg)
+                    } else {
+                        el.text("An error occured", 'error');
+                        end_loader();
+                    }
+                    _this.prepend(el)
+                    el.show('slow')
+                    $("html, body, .modal").scrollTop(0);
+                    end_loader()
+                }
+            })
+        })
+    })
+</script>

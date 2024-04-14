@@ -1,0 +1,292 @@
+{% load static %}{% block pageContent %}{% load customfilter %}
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{{party.name }}|transactions</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.0/css/dataTables.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.0/css/buttons.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.5.0/css/rowGroup.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.datatables.net/2.0.3/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.1/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.1/js/buttons.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.0/js/buttons.print.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.0.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.0/js/responsive.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/rowgroup/1.5.0/js/dataTables.rowGroup.js"></script>
+    <script src="https://cdn.datatables.net/rowgroup/1.5.0/js/rowGroup.dataTables.js"></script>
+    <script type="text/javascript" src="{% static 'assets/default/js/vfs_fonts.js' %}"></script>
+
+    <style>
+       div.container { max-width: 1200px }
+       body.dt-print-view table th{
+            text-align: right;
+        }
+       body.dt-print-view table td{
+            text-align: right;
+        }
+    </style>
+
+</head>
+
+<body>
+    <a href="javascript:history.back()" style="position: absolute; top: 20px; left: 20px; text-decoration: none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 11H7.414l4.293-4.293L10 5l-6 6 6 6 1.707-1.707L7.414 13H20v-2z" fill="currentColor"/>
+        </svg>
+        Back
+    </a>
+    <h1 style="text-align:center;">تفصیل کھاتہ</h1>
+  <h4 style="text-align: right;"> {{party.name}}:پارٹی</h4>
+  <h4 style="text-align: right"><input name="date_to" id="date_to" type="date"></input>مورخہ <input name="date_from" id="date_from" type="date"></input> سے </h4>
+  <h4 style="text-align: left;" id="recentbalance">سابقہ بیلنس: <span>0</span></h4>
+
+  <div id="breakpoint"></div>
+<table id="example" class="display cell-border" style="width:100%">
+        <thead>
+            <tr>
+                <th class='all' >بقایا</th>
+                <th class='tablet desktop'>بنام</th>
+                <th class='tablet desktop'>جمع</th>
+                <th class='all'>تفصیل</th>
+                <th class='tablet desktop'>تاریخ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{transaction.get_running_balance | credit_or_debit}}</td>
+                <td>{{transaction.credit | check_value}}</td>
+                <td>{{transaction.debit | check_value}}</td>
+                <td>{{transaction.description | check_value}}</td>
+                <td>{{transaction.form.created_at}}</td>
+                
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% endblock pageContent %} {% block ScriptBlock %}
+    <script>
+        $(document).ready(function () {
+            var recentBalance = $('#recentbalance span')
+            var dataTable = $('#example').DataTable({
+                layout: {
+                    topStart: {
+                        buttons: [
+                            {
+                                extend: 'print',
+                                title:'',
+                                autoPrint: true,
+                                customize: function ( win ) {
+                                    var fromDate = $('#date_from').val();
+                                    var toDate = $('#date_to').val();
+                                    var recentBalanceValue = recentBalance.text();
+                                    $(win.document.body).find('h4').addClass('your-custom-class');
+                                    $(win.document.body).find('th:eq(0)').css('width', '120px');
+                                    $(win.document.body).find('th:eq(1)').css('width', '90px');
+                                    $(win.document.body).find('th:eq(2)').css('width', '90px');
+                                    $(win.document.body).find('th:eq(4)').css('width', '110px');
+                                    $(win.document.body).prepend('<h4 style="text-align: left;" id="recentbalance">سابقہ بیلنس: <span>' + recentBalanceValue + '</span></h4>');
+                                    if (toDate && fromDate) {
+                                        $(win.document.body).prepend('<h4 style="text-align: right;"> {{party.name}}:پارٹی</h4><h4 style="text-align: right">' + toDate + 'لین دین مورخہ' + fromDate + '  سے </h4>');
+                                    } else if (toDate) {
+                                        $(win.document.body).prepend('<h4 style="text-align: right;"> {{party.name}}:پارٹی</h4><h4 style="text-align: right">' + toDate + '  پہلے لین دین سے</h4>');
+                                    } else if (fromDate) {
+                                        $(win.document.body).prepend('<h4 style="text-align: right;"> {{party.name}}:پارٹی</h4><h4 style="text-align: right"> لین دین مورخہ ' + fromDate + ' آخری لین دین تک  سے  </h4>');
+                                    } else {
+                                        $(win.document.body).prepend('<h4 style="text-align: right;"> {{party.name}}:پارٹی</h4><h4 style="text-align: right"> تمام لین دین</h4>');
+                                    }
+                                    $(win.document.body).prepend('<h1 style="text-align:center;">تفصیل کھاتہ</h1>');
+                                    var lastTr = $(win.document.body).find('tbody tr:last');
+                                    var firstTdValue = lastTr.find('td:eq(0)').text();
+                            // Append a custom td just before the end of tbody and after the last tr
+                                    lastTr.after('<tr><td style="text-align:right; border: 1px solid #000;">'+firstTdValue+'</td></tr>');
+
+                                }
+                                
+                            },
+                           {
+                                extend: 'pdfHtml5',
+                                title:"{{party.name}}",
+                                customize: function (doc) {
+                                    var fromDate = $('#date_from').val();
+                                    var toDate = $('#date_to').val();
+                                    var recentBalanceValue = recentBalance.text();
+                                    
+                                    processDoc(doc);
+                                    doc.styles['title'] = {bold:true, fontSize:20,alignment:'center'};
+                                    doc.styles['table'] = {alignment:'center'};
+                                    doc.pageMargins = [20,60,20,30];
+                                    doc.content[1].table.widths = [ '12%',  '12%', '12%', '50%','14%'];
+                                    if (toDate && fromDate) {
+                                        doc.content.splice( 1, 0, {
+                                            margin: [ 0, 0, 0, 12 ],
+                                            alignment: 'right',
+                                            fontSize:14,
+                                            text: toDate + ' سے '  + fromDate + ' مورخہ' + ' دین' + ' لین'
+                                        } )
+                                    }
+                                     else if (toDate){
+                                        doc.content.splice( 1, 0, {
+                                            margin: [ 0, 0, 0, 12 ],
+                                            alignment: 'right',
+                                            fontSize:14,
+                                            text: toDate +   ' سے '  + ' دین '+' لین ' + ' پہلے'
+                                        } );
+                                    }else if (fromDate) {
+                                        doc.content.splice( 1, 0, {
+                                            margin: [ 0, 0, 0, 12 ],
+                                            alignment: 'right',
+                                            fontSize:14,
+                                            text:    ' تک  '  + ' دین '+' لین ' + ' آخری' + fromDate + ' مورخہ' + ' دین' + ' لین'
+                                        } );
+                                    }else {
+                                        doc.content.splice( 1, 0, {
+                                            margin: [ 0, 0, 0, 12 ],
+                                            alignment: 'right',
+                                            fontSize:14,
+                                            text:     ' دین '+' لین ' + ' تمام' 
+                                        } );
+                                    }
+                                    doc.content.splice( 2, 0, {
+                                            margin: [ 0, 0, 0, 12 ],
+                                            alignment: 'left',
+                                            fontSize:14,
+                                            text:     recentBalanceValue +' : بیلنس ' + ' سابقہ' 
+                                    } );
+                                    var length = doc.content[3].table.body.length
+                                    var lastValue = doc.content[3].table.body[length-1][0].text
+                                    doc.content[3].table.body.push(Array(lastValue,"","","",""))
+                                    doc.content[3].layout = 'lightHorizontalLines'
+                                }
+                            }
+                        ]  
+                }}, 
+                paging:true,
+                order: [[4, 'asc']],
+                
+                rowGroup: {
+                    dataSrc: 4
+                },
+                columnDefs: [
+                    { "width": "120px", "targets": 0 }, 
+                    { "width": "90px", "targets": 1 }, 
+                    { "width": "90px", "targets": 2 }, 
+                    { "width": "110px", "targets": 4,
+                     "render": function (data, type, row) {
+                      if (type === 'display') {
+                          // Format the date in a concise way (you may need to adjust the format)
+                          var formattedDate = new Date(data).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                          return formattedDate;
+                      }
+                      return data;
+                  }
+                },  
+                    
+                   {
+                                orderable: false,
+                                targets: '_all'
+                    }, 
+                    {
+                        targets: ["_all"],
+                        className: 'dt-head-right'
+                    },
+                    {
+                        targets: ["_all"],
+                        className: 'dt-body-right'
+                    },
+                    { "type": "date", "targets": 4 }, // Treat the fourth column as a date
+
+                ],
+            } );
+        var hideColumnIndex = -1;
+        var column = dataTable.column(hideColumnIndex);
+        column.visible(false);
+        var date_to = $('#date_to');
+        var date_from = $('#date_from');
+        
+        date_to.on('change', function () {
+            dataTable.draw();
+        });
+
+        date_from.on('change', function () {
+            var minDate = date_from.val() ? new Date(date_from.val()) : null;
+
+            // Get all rows data
+            var allRowsData = dataTable.rows().data().toArray();
+
+            // Filter rows that come before the minDate
+            var rowsBeforeMinDate = allRowsData.filter(function (row) {
+                var transactionDate = new Date(row[4]); // assuming the date is in the 5th column
+                return minDate === null || transactionDate.setHours(0, 0, 0, 0) < minDate.setHours(0, 0, 0, 0);
+            });
+
+            // Log the data of rows before minDate
+                var lastRowValue = rowsBeforeMinDate[rowsBeforeMinDate.length - 1];
+
+                recentBalance.text(lastRowValue && lastRowValue[0] !== undefined ? lastRowValue[0] : 0);
+                dataTable.draw();
+
+        });
+       
+        $.fn.dataTable.ext.search.push(
+            function (settings, data, dataIndex) {
+
+                var minDate = date_from.val() ? new Date(date_from.val()) : null;
+                var maxDate = date_to.val() ? new Date(date_to.val()) : null;
+                var transactionDate = new Date(data[4]); // assuming the date is in the 5th column
+
+                if (
+                    (minDate === null || transactionDate.setHours(0, 0, 0, 0) >= minDate.setHours(0, 0, 0, 0)) &&
+                    (maxDate === null || transactionDate.setHours(0, 0, 0, 0) <= maxDate.setHours(0, 0, 0, 0))
+                ) {
+                    return true;
+                }
+
+                return false;
+            }
+        );
+
+        })
+ function processDoc(doc) {
+    pdfMake.fonts = {
+      Roboto: {
+        normal: 'Roboto-Regular.ttf',
+        bold: 'Roboto-Medium.ttf',
+        italics: 'Roboto-Italic.ttf',
+        bolditalics: 'Roboto-MediumItalic.ttf'
+      },
+      arial: {
+        normal: 'arial.ttf',
+        bold: 'arial.ttf',
+        italics: 'arial.ttf',
+        bolditalics: 'arial.ttf'
+      },
+      noto:{
+        normal: 'noto.ttf',
+        bold: 'noto.ttf',
+        italics: 'noto.ttf',
+        bolditalics: 'noto.ttf'
+      }
+    };
+    // modify the PDF to use a different default font:
+    doc.defaultStyle.font = "noto";
+    var i = 1;
+    }
+   
+    
+    </script>
+
+    {% endblock ScriptBlock %}
+</body>
+
+</html>
