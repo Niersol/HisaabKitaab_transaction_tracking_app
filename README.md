@@ -1,4 +1,3 @@
-Certainly! To reflect that the app was developed according to the client's requirements, you can add a section in the README highlighting this aspect. Here's an updated version of the README:
 
 ---
 
