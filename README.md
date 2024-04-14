@@ -1,0 +1,1 @@
+"HisaabKitaab" is a Django-based app for managing transactions and generating precise date-based ledgers. It offers secure user authentication, transaction management, and ledger printing. Ideal for tracking and organizing transactions efficiently.
