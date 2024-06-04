@@ -11,7 +11,7 @@ class User(AbstractUser):
         permissions = (
             ("can_assign_staff","Can Assign Staff to Users"),
         )
-
+    
 
 class StaffUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL,null=True)

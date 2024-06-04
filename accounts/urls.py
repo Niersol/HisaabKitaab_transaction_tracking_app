@@ -15,5 +15,9 @@ urlpatterns = [
     path('transactions_list/',transaction_list, name='transaction_list'),
     path('delete_transaction/<int:pk>/', delete_transaction, name='delete-transaction'),
     path('view_transactions/<int:pk>', view_transactions, name='view-transactions'),
-
+    path('manage_sales_purchase',manage_sales_purchases,name='manage-sales-purchase'),
+    path('manage_sales_purchase/<int:pk>/',manage_sales_purchases,name='manage-sales-purchase'),
+    path('save_trade',save_trade,name="save-trade"),
+    path('sales_list/',sales_list, name='sales_list'),
+    path('purchases_list/',purchases_list, name='purchases_list'),
 ]

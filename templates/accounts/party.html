@@ -6,24 +6,20 @@
         object-fit: scale-down;
         object-position: center center;
     }
+    
 </style>
 <section class="py-4">
     <div class="container"> 
         <h3 class="fw-bolder text-center">List of Parties</h3>
         <center>
             <hr class="bg-primary opacity-100" style="height:3px" width="5%">
-             {% if perms.accounts.can_manage_transactions or user.assigned_staff.user == request.user %}
-            <button type="button" class="btn btn-primary" id="new_form" >
-                Manage Transactions
-            </button>
-            {% endif %}
         </center>
         <div class="card rounded-0 shadow">
             <div class="card-body">
                 <div class="container-fluid">
                 {% if perms.accounts.add_party or user.assigned_staff.user == request.user  %}
                     <div class="text-end mb-3">
-                        <button class="btn btn-sm btn-primary rounded-0 bg-gradient-primary" type="button" id="create_new"><i class="fa fa-plus"></i> Add New Party</button>
+                        <button class="btn rounded-0" type="button" id="create_new"><i class="fa fa-plus"></i> Add New Party</button>
                     </div>
                 {% endif %}
                     <table class="display cell-border" class="table table-bordered table-striped" style="width:100%" id="party-tbl">
@@ -96,7 +92,33 @@
 <script>
     
     $(function() {
-         $('#new_form').click(function(){
+         $('#new_form_manage_s_p').click(function(){
+            $.ajax({
+                url: "{% url 'accounts:manage-sales-purchase'  %}",
+                method: 'GET',
+                data: {
+                    'user_id': {{user.id}},
+                },
+                error: err =>{
+                        alert("An error occured")
+                    },
+                success: function(resp){
+                    if(resp){
+                        
+                        $('#myModal .modal-body').html(resp)
+                        
+                        $('#uni_modal').modal({
+                            backdrop:'static',
+                            keyboard:false,
+                            focus:true
+                        })
+                        $("#myModal").modal('show')
+                        end_loader()
+                    }
+                }
+            });
+        })
+         $('#new_form_manage_transactions').click(function(){
             $.ajax({
                 url: "{% url 'accounts:manage-transaction'  %}",
                 method: 'GET',
@@ -151,7 +173,7 @@
         })
             // Attach click event to the view-data link
 
-
+        
         $('.edit-data').click(function() {
             uni_modal("<i class='fa fa-edit'></i> Edit Party Details", $(this).attr('data-url'))
         })

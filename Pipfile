@@ -11,7 +11,6 @@ cryptography = "*"
 whitenoise = "*"
 gunicorn = "*"
 django-debug-toolbar = "*"
-django-unfold = "*"
 
 [dev-packages]
 

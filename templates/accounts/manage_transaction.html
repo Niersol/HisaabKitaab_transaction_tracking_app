@@ -116,28 +116,38 @@
 
 <button type="submit" class="btn btn-secondary" id="addTransaction">Add to List</button>
 </form>
-    <div id="transactionList">
-        <table class="display cell-border " style="width:100%" id="transaction-tbl">
-            <thead>
-                <tr>
-                    <th >#</th>
-                    <th >Date</th>
-                    <th >Name</th>
-                    <th >Description</th>
-                    <th >Debit</th>
-                    <th >Credit</th>
-                    <th >Action</th>
-                </tr>
-            </thead>
+</div>
+<div class="container-fluid">
+    <button type="button" class="btn btn-secondary" id="toggleTransactions">
+        View Recent Transactions
+    </button>
+    <div id="transactionListContainer" >
+        <div id="transactionList">
             
-        </table>
+        </div>
     </div>
 </div>
 </body>
 <script>
     $(document).ready(function () {
        
-        
+    $('#toggleTransactions').click(function () {
+        var container = $('#transactionListContainer');
+        var button = $(this);
+
+        if (container.is(':visible')) {
+            // Hide the transaction list container with a slide-up animation
+            container.slideUp('slow', function () {
+                button.text('View Recent Transactions');
+            });
+        } else {
+            // Show the transaction list container with a slide-down animation
+            container.slideDown('slow', function () {
+                button.text('Hide Transactions');
+            });
+        }
+    });
+
         $('#myModal').off('shown.bs.modal').on('shown.bs.modal', function () {
             $('#date').val(localStorage.getItem('date'));
             dataTable = initializeDataTable();
@@ -202,7 +212,6 @@
                 },
                 success: function(resp) {
                     if (typeof resp === 'object' && resp.status === 'success') {
-                        $('#date').val(localStorage.getItem('date'));
                         initializeDataTable()
                         end_loader();
                     } else {
@@ -229,6 +238,7 @@
                 
                     // Clear form fields
                     $('#transactionForm')[0].reset();
+                    $('#date').val(localStorage.getItem('date'));
                     $('#name').focus();
                 } else {
                     // Group "Credit" and "Debit" fields together in an outline
