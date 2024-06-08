@@ -1,0 +1,85 @@
+{% load static %}
+<body>
+<div class="container-fluid">
+    <form action="" id="product-form">
+    {% if product.user.id %}
+        <input type="hidden" id="user" name="user" value="{{product.user.id}}">
+    {% else %}
+        <input type="hidden" name="user"  id="user"  value="{{user_id}}">
+    {% endif %}
+        <input type="hidden" id = "id" name="id" value="{{product.id}}">
+        <div class="mb-3">
+            <label for="name" class="control-label">Name</label>
+            <input type="text" id="name" name="name" class="form-control form-control-sm rounded-0" value="{{product.name}}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="quantity" class="control-label">Quantity</label>
+            <input type="number" class="form-control rounded-0" name="quantity" id="quantity" value="{{ product.quantity }}" >
+        </div>
+    </form>
+</div>
+</body>
+<script>
+    $(function() {
+        $('#quantity').on('input',function(e){
+            if(e.target.value<0){
+                e.target.value = 1
+            }
+        }) 
+        $('#product-form').submit(function(e) {
+            id = $('#id').val()
+            name = $('#name').val()
+            quantity = $('#quantity').val()
+            user_id = $('#user').val()
+            e.preventDefault();
+            var _this = $(this)
+            $('.err-msg').remove();
+            var el = $('<div>')
+                el.addClass("alert alert-danger err-msg")
+                el.hide()
+                if (_this[0].checkValidity() == false) {
+                    _this[0].reportValidity();
+                    return false;
+                }
+                start_loader();
+                $.ajax({
+                headers: {
+                    "X-CSRFToken": '{{csrf_token}}'
+                },
+                url: "{% url 'accounts:save-product' %}",
+                data: JSON.stringify({
+                    "id":id,
+                    "name":name,
+                    "quantity":quantity,
+                    "user_id":user_id,
+                }),
+                cache: false,
+                contentType: false,
+                processData: false,
+                method: 'POST',
+                type: 'POST',
+                dataType: 'json',
+                error: err => {
+                    console.log(err)
+                    alert("An error occured", 'error');
+                    end_loader();
+                },
+                success: function(resp) {
+                    if (typeof resp == 'object' && resp.status == 'success') {
+                        location.reload()
+                    } else if (resp.status == 'failed' && !!resp.msg) {
+                        el.text(resp.msg)
+                    } else {
+                        el.text("An error occured", 'error');
+                        end_loader();
+                        console.log(resp)
+                    }
+                    _this.prepend(el)
+                    el.show('slow')
+                    $("html, body, .modal").scrollTop(0);
+                    end_loader()
+                }
+            })
+        })
+    })
+</script>

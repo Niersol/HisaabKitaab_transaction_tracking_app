@@ -1,19 +1,18 @@
 from django.contrib import admin
 from .models import *
-from unfold.admin import ModelAdmin
 @admin.register(Party)
-class PartyAdmin(ModelAdmin):
+class PartyAdmin(admin.ModelAdmin):
     pass
 
 
 @admin.register(Product)
-class ProductAdmin(ModelAdmin):
+class ProductAdmin(admin.ModelAdmin):
     pass
 
-@admin.register(Trade)
-class TradeAdmin(ModelAdmin):
-    pass
 
 @admin.register(TradeItem)
-class TradeItemAdmin(ModelAdmin):
+class TradeItemAdmin(admin.ModelAdmin):
+    pass
+@admin.register(Transaction)
+class TransactionItemAdmin(admin.ModelAdmin):
     pass

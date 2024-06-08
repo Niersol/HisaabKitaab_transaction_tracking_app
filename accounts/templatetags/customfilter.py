@@ -40,3 +40,26 @@ def check_value(value):
         return "-"
     else:
         return value
+
+@register.filter
+def multiply(value, arg):
+    return value * arg
+
+@register.filter
+def invoice_type(value):
+    if value == 0:
+        return "Purchase"
+    else:
+        return "Sale"
+
+
+@register.filter(name = "not_available")
+def notAvailable(value):
+    if value == 0:
+        return "N/A"
+    else:
+        return value
+    
+@register.simple_tag
+def total_without_changes(value,arg1,arg2):
+    return value + arg1 - arg2

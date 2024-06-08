@@ -38,6 +38,7 @@
                         <a class="nav-link" aria-current="page" href="{% url 'core:user-list' %}">Users</a>
                     </li> 
                     {% endif %}
+                    
                    
                     {% if options %}
                         {% for option in options %}
@@ -54,7 +55,7 @@
                 <ul class="navbar-nav d-flex flex-row">
                     {% if request.user.is_staff %}
                     <li class="nav-item">
-                        <a class="nav-link"  href="{% url 'admin:index' %}"><b>Howdy, {{user.username}}</b><a>
+                        <a class="nav-link"  href="{% url 'admin:index' %}"><b>Howdy, {{request.user}}</b><a>
                     </li>
                     {% endif %}
                     {% if request.user.is_active %}
@@ -73,6 +74,65 @@
 </header>
 <script>
     $(function() {
+        $('#new_form_manage_s_p').click(function(){
+            $.ajax({
+                url: "{% url 'accounts:manage-sales-purchase'  %}",
+                method: 'GET',
+                data: {
+                    'user_id': {{user.id}},
+                },
+                error: err =>{
+                        alert("An error occured")
+                    },
+                success: function(resp){
+                    if(resp){
+                        
+                        $('#myModal .modal-body').html(resp)
+                        
+                        $('#uni_modal').modal({
+                            backdrop:'static',
+                            keyboard:false,
+                            focus:true
+                        })
+                        $("#myModal").modal('show')
+                        end_loader()
+                    }
+                }
+            });
+        })
+         $('#new_form_manage_transactions').click(function(){
+            $.ajax({
+                url: "{% url 'accounts:manage-transaction'  %}",
+                method: 'GET',
+                data: {
+                    'user_id': {{user.id}},
+                },
+                error: err =>{
+                        alert("An error occured")
+                    },
+                success: function(resp){
+                    if(resp){
+                        
+                        $('#myModal .modal-body').html(resp)
+                        
+                        $('#uni_modal').modal({
+                            backdrop:'static',
+                            keyboard:false,
+                            focus:true
+                        })
+                        $("#myModal").modal('show')
+                        end_loader()
+                    }
+                }
+            });
+        })
+        $('#new_form_product').click(function(){
+            window.location.href = "{% url 'accounts:products-pk' pk=user.id %}"
+        })
+        $('#new_form_parties').click(function(){
+            console.log("lol")
+            window.location.href = "{% url 'accounts:user-detail-pk' pk=user.id %}"
+        })
         $('#topNav .nav-link').each(function() {
             var current = '{{ request.get_full_path | urlencode }}'
             if (current == $(this).attr('href')) {

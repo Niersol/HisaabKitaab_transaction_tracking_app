@@ -20,4 +20,11 @@ urlpatterns = [
     path('save_trade',save_trade,name="save-trade"),
     path('sales_list/',sales_list, name='sales_list'),
     path('purchases_list/',purchases_list, name='purchases_list'),
+    path('products/',products,name="products"),
+    path('products/<int:pk>',products,name="products-pk"),
+    path('manage_products/',manage_products,name="manage-products"),
+    path('manage_products/<int:pk>',manage_products,name="manage-products-pk"),
+    path('save_products/',save_product,name="save-product"),
+    path('delete_product/<int:pk>',delete_product,name="delete-product"),
+    path('print/<int:pk>',print_veiw,name="print-view-pk"),
 ]

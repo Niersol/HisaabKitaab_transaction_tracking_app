@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Invoice</title>
+    <style>
+        /* CSS styles can be added here */
+        /* Just a simple example */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .header .right {
+            text-align: right;
+        }
+        .header .right p {
+            margin: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right; /* Align text to the right */
+            white-space: nowrap; /* Prevent wrapping */
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .bolder-striped {
+    border-width: 1px; /* Adjust the width as needed */
+    border-style: dashed;
+    border-color: black; /* Change the color if needed */
+  }
+  p {
+    text-decoration: underline;
+  }
+    </style>
+</head>
+<body>
+    {% load customfilter %}
+
+    <div>
+        <h2 style="text-align:center;">{{transaction.debit|invoice_type}} Invoice</h2>
+        <div class="header">
+            <div class="left">
+                <p>{{ transaction.form.created_at }}<strong>:تاریخ</strong></p>
+            </div>
+            <div class="right">
+                
+                <p>{{transaction.bill_number|not_available }}<strong>:#بل </strong>
+                <p>{{ transaction.party.name }}<strong>:نام</strong></p>
+            </div>
+        </div>
+        <div class = "right" style="text-align:right;">
+                <p>{{ transaction.description }}<strong>:تفصیل</strong></p>
+        </div>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>کل</th> <!-- Total -->
+                        <th>قیمت</th> <!-- Price -->
+                        <th>مقدار</th> <!-- Quantity -->
+                        <th>مصنوعات کا نام</th> <!-- Product Name -->
+                        <th>#</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>{{ item.quantity|multiply:item.price }}</td>
+                        <td>{{ item.price }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ forloop.counter }}</td>
+                    </tr>
+                {% endfor %}
+                {% if transaction.credit == 0 %}
+                    <tr>
+                    {% total_without_changes transaction.debit transaction.discount transaction.charges as debit_check%}
+                <td class="bolder-striped" style="width:100px;background-color:silver;">{{debit_check|safe}}</td>
+                        <td class="bolder-striped" style="text-align:left; width:100px ">: کل</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                {% total_without_changes transaction.credit transaction.discount transaction.charges as credit_check %}
+                <td class="bolder-striped" style="width:100px;background-color:silver;">{{credit_check|safe}}</td>
+                        <td class="bolder-striped" style="text-align:left; width:100px ">: کل</td>
+                    </tr>
+                {% endif %}
+                    <tr>
+                        <td class="bolder-striped" style="width:100px;background-color:rgb(218, 218, 218);">{{transaction.charges}}</td>
+                        <td class="bolder-striped" style="text-align:left; width:100px ">:ڈیلیوری چارجز</td>
+                    </tr>
+                    <tr>
+                        <td class="bolder-striped" style="width:100px;background-color:rgb(218, 218, 218);">-{{transaction.discount}}</td>
+                        <td class="bolder-striped" style="text-align:left; width:100px ">:رعایت</td>
+                    </tr>
+                {% if transaction.credit == 0 %}
+                    <tr>
+                        <td class="bolder-striped" style="width:100px;background-color:silver;">{{transaction.debit}}</td>
+                        <td class="bolder-striped" style="text-align:left; width:100px ">:حتمی کل</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td class="bolder-striped" style="width:100px;background-color:silver;">{{transaction.credit}}</td>
+                        <td class="bolder-striped" style="text-align:left; width:100px ">:حتمی کل</td>
+                    </tr>
+                {% endif %}
+                    <!-- Add more rows as needed -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    window.onafterprint = window.close;
+         window.print();
+})
+</script>
+</html>

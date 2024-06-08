@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 
 class Party(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
+    balance = models.BigIntegerField(default=0)
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=255,blank=True,null=True)
     address = models.CharField(max_length=255,blank=True,null=True)
@@ -49,6 +49,12 @@ class Product(models.Model):
     def __str__(self) -> str:
         return self.name
     
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super().save(*args, **kwargs)
+    
+    class Meta:
+        unique_together = ['user','name']
 class Transaction(models.Model):
     party = models.ForeignKey(Party,on_delete=models.CASCADE)
     description = models.TextField(blank=True,null=True)
@@ -57,12 +63,21 @@ class Transaction(models.Model):
     time = models.TimeField(auto_now_add=True)
     form = models.ForeignKey(Form,on_delete = models.CASCADE)
     delete_flag = models.IntegerField(default=0)
+    bill_number = models.PositiveIntegerField(default=0)
+    discount = models.PositiveIntegerField(default=0)
+    charges = models.PositiveIntegerField(default=0)
+    is_sales = models.BooleanField(null=True,blank=True)
+
     def __str__(self):
         return self.party.name  
     
     class Meta:
         permissions = (
             ("can_manage_transactions","Can Manage Transactions"),
+            ("can_manage_sales","Can Manage Sales"),
+            ("can_manage_purchase","Can Manage Purchase"),
+            ("can_manage_s_p","Can Manage Sale/Purchase"),
+
         )
 
     def get_running_balance(self):
@@ -77,34 +92,15 @@ class Transaction(models.Model):
         running_balance = prior_debit - prior_credit
         return running_balance + self.debit - self.credit
     
-class Trade(models.Model):
-    transaction = models.OneToOneField(Transaction,on_delete=models.CASCADE,blank=True,null=True)
-    bill_number = models.PositiveIntegerField(default=0)
-    party = models.ForeignKey(Party,on_delete=models.CASCADE)
-    description = models.TextField(blank=True,null=True)
-    debit = models.PositiveIntegerField(default=0)
-    credit = models.PositiveIntegerField(default=0)
-    time = models.TimeField(auto_now_add=True)
-    form = models.ForeignKey(Form,on_delete = models.CASCADE)
-    delete_flag = models.IntegerField(default=0)
-    discount = models.PositiveIntegerField(default=0)
-    is_sales = models.BooleanField()
-    def __str__(self):
-            return self.party.name  
-    class Meta:
-        permissions = (
-            ("can_manage_sales","Can Manage Sales"),
-            ("can_manage_purchase","Can Manage Purchase"),
-            
-        )
+
 
 class TradeItem(models.Model):
 
-    trade = models.ForeignKey(Trade,on_delete=models.CASCADE,related_name='trade_items') 
+    trade = models.ForeignKey(Transaction,on_delete=models.CASCADE,related_name='trade_items') 
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     price = models.PositiveIntegerField()
-
+    delete_flag = models.IntegerField(default=0)
     def __str__(self) -> str:
         return f"{self.trade} - {self.product}"
 

@@ -45,7 +45,7 @@
                                     <p class="m-0 truncate-1">{{ party.phone_number | check_value }}</p>
                                 </td>
                                 <td>
-                                    {% with balance=party.get_balance %}
+                                    {% with balance=party.balance %}
                                         {% if balance > 0 %}
                                             <p class="m-0 truncate-1 text-success">{{ balance }}(+)</p>
                                         {% elif balance < 0 %}
@@ -143,6 +143,9 @@
                     }
                 }
             });
+        })
+        $('#new_form_product').click(function(){
+            window.location.href = "{% url 'accounts:products-pk' pk=user.id %}"
         })
         $('#create_new').click(function() {
             $.ajax({

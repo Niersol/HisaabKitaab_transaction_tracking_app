@@ -212,6 +212,14 @@
                 },
                 success: function(resp) {
                     if (typeof resp === 'object' && resp.status === 'success') {
+                        $('#date').val(localStorage.getItem('date'));
+                        $('#name').focus();
+                        $('#id').val('');
+                        $('#name').val('');
+                        $('#credit').val('');
+                        $('#description').val('');
+                        $('#debit').val('');
+
                         initializeDataTable()
                         end_loader();
                     } else {
@@ -237,9 +245,6 @@
                     // Append data to the list
                 
                     // Clear form fields
-                    $('#transactionForm')[0].reset();
-                    $('#date').val(localStorage.getItem('date'));
-                    $('#name').focus();
                 } else {
                     // Group "Credit" and "Debit" fields together in an outline
                     $('#debit, #credit').addClass('border border-danger');
@@ -288,7 +293,7 @@
         
         function initializeDataTable() {
              var selectedDate = localStorage.getItem('date')
-            if(selectedDate==''){
+            if(selectedDate=='' || selectedDate == null){
             selectedDate = '2000-01-01'
             }
             // AJAX request to fetch transactions based on the selected date
